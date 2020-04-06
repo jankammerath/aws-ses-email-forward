@@ -1,0 +1,104 @@
+#
+# This application allows forwarding e-mails
+# stored by AWS SES or other applications in
+# an S3 bucket to destination emails configured
+# in the environment variables
+# 
+AWSTemplateFormatVersion: 2010-09-09
+Description: "AWS SES E-Mail Forwarding"
+
+Parameters:
+    # this address will be used as the sender
+    # and the original address will be put into
+    # the reply-to header
+    SenderMailAddress:
+        Description: "Default sender address for forwarding"
+        Type: String
+        # regular expression to match email addresses
+        AllowedPattern: "\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b"
+
+    # default recipient is used when no other
+    # email address matches the query (catch-all)
+    DefaultRecipientMailAddress:
+        Description: "Default recipient address for forwarding"
+        Type: String
+        # regular expression to match email addresses
+        AllowedPattern: "\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b"
+
+    # the name of the s3 bucket that holds all
+    # the raw emails collected by SES or others
+    EmailBucketName:
+        Description: "Name of the S3 bucket with the mails"
+        Type: String
+        AllowedPattern: "^[a-z0-9\\.\\-]+$"
+
+Resources:
+    # IAM role for the lambda function
+    LambdaRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                - Effect: Allow
+                    Principal:
+                    Service:
+                        - lambda.amazonaws.com
+                    Action:
+                        - 'sts:AssumeRole'
+            Path: /
+            Policies:
+                - PolicyName: root
+                PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                    - Effect: Allow
+                        Action:
+                        - 's3:*'
+                        Resource: '*'
+                    - Effect: Allow
+                        Action:
+                        - 'ses:SendRawEmail'
+                        Resource: '*'
+                    - Effect: Allow
+                        Action:
+                        - 'logs:CreateLogGroup'
+                        - 'logs:CreateLogStream'
+                        - 'logs:PutLogEvents'
+                        Resource: 'arn:aws:logs:*:*:*'
+
+    # invoke permission for s3 calling lambda
+    LambdaInvokePermission:
+        Type: 'AWS::Lambda::Permission'
+        Properties:
+            Action: 'lambda:InvokeFunction'
+            Principal: s3.amazonaws.com
+            SourceAccount: !Ref 'AWS::AccountId'
+            SourceArn: !Sub 'arn:aws:s3:::${EmailBucketName}'
+
+    # trigger calling lambda for new s3 objects
+    LambdaTrigger:
+        Type: Custom::RouteTableLambda
+        DependsOn: LambdaInvokePermission
+        Properties:
+            ServiceToken: !GetAtt LambdaFunction.Arn
+            LambdaArn: !GetAtt LambdaFunction.Arn
+            Bucket: !Ref EmailBucketName
+
+    # lambda function that processes the forwarding
+    LambdaFunction:
+        DependsOn:
+        - LambdaRole
+        Type: AWS::Lambda::Function
+        Properties:
+            Handler: 'app.lambdaHandler'
+            Role: !GetAtt LambdaRole.Arn
+            Runtime: 'nodejs12.x'
+            Timeout: 60
+            Environment:
+                Variables:
+                    SENDER_ADDRESS: !Ref SenderMailAddress
+                    DEFAULT_RECIPIENT: !Ref DefaultRecipientMailAddress
+            Code:
+                ZipFile: |
+                    exports.lambdaHandler=(async(a,d)=>!0);
