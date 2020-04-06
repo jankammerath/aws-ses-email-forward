@@ -14,23 +14,21 @@ Parameters:
     SenderMailAddress:
         Description: "Default sender address for forwarding"
         Type: String
-        # regular expression to match email addresses
-        AllowedPattern: "\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b"
+        Default: "forward@mydomain.com"
 
     # default recipient is used when no other
     # email address matches the query (catch-all)
     DefaultRecipientMailAddress:
         Description: "Default recipient address for forwarding"
         Type: String
-        # regular expression to match email addresses
-        AllowedPattern: "\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b"
+        Default: "catchall@mydomain.com"
 
     # the name of the s3 bucket that holds all
     # the raw emails collected by SES or others
     EmailBucketName:
         Description: "Name of the S3 bucket with the mails"
         Type: String
-        AllowedPattern: "^[a-z0-9\\.\\-]+$"
+        Default: "my-email-s3-bucket"
 
 Resources:
     # IAM role for the lambda function
@@ -41,36 +39,37 @@ Resources:
                 Version: 2012-10-17
                 Statement:
                 - Effect: Allow
-                    Principal:
+                  Principal:
                     Service:
-                        - lambda.amazonaws.com
-                    Action:
-                        - 'sts:AssumeRole'
+                      - lambda.amazonaws.com
+                  Action:
+                    - 'sts:AssumeRole'
             Path: /
             Policies:
                 - PolicyName: root
-                PolicyDocument:
+                  PolicyDocument:
                     Version: 2012-10-17
                     Statement:
                     - Effect: Allow
-                        Action:
+                      Action:
                         - 's3:*'
-                        Resource: '*'
+                      Resource: '*'
                     - Effect: Allow
-                        Action:
+                      Action:
                         - 'ses:SendRawEmail'
-                        Resource: '*'
+                      Resource: '*'
                     - Effect: Allow
-                        Action:
+                      Action:
                         - 'logs:CreateLogGroup'
                         - 'logs:CreateLogStream'
                         - 'logs:PutLogEvents'
-                        Resource: 'arn:aws:logs:*:*:*'
+                      Resource: 'arn:aws:logs:*:*:*'
 
     # invoke permission for s3 calling lambda
     LambdaInvokePermission:
-        Type: 'AWS::Lambda::Permission'
+        Type: AWS::Lambda::Permission
         Properties:
+            FunctionName: !GetAtt LambdaFunction.Arn
             Action: 'lambda:InvokeFunction'
             Principal: s3.amazonaws.com
             SourceAccount: !Ref 'AWS::AccountId'
