@@ -1,6 +1,5 @@
 /* require the AWS SDK */
 const AWS = require('aws-sdk');
-const s3 = new AWS.S3();
 
 /**
  * This lambda function receives notifications from
@@ -12,6 +11,13 @@ exports.lambdaHandler = async (event, context) => {
     /* get the email records */
     let promiseList = [];
     if(event.hasOwnProperty('Records')){
+        /* update the AWS region */
+        if(event.Records.length > 0){
+            /* set the region to the one the bucket is in */
+            AWS.config.update({region: event.Records[0].awsRegion});
+        }
+
+        /* walk through the records */
         for(let r=0; r<event.Records.length; r++){
             /* execute the forward process */
             promiseList.push(forwardMessage(event.Records[r]));
@@ -35,6 +41,9 @@ exports.lambdaHandler = async (event, context) => {
  * the record of the s3 file with the mail content
  */
 async function forwardMessage(s3record){
+    /* create the instance of the s3 sdk */
+    let s3 = new AWS.S3();
+
     /* fetch the message from s3 */
     let response = await s3.getObject({
         Bucket: s3record.s3.bucket.name,
@@ -45,6 +54,10 @@ async function forwardMessage(s3record){
     if(response !== null){
         let content = response.Body.toString('ascii');
         let transformed = rewriteMessage(content);
+
+        /* create the instance of the SES sdk and send message */
+        let ses = new AWS.SES({apiVersion: '2010-12-01'});
+        await ses.sendRawEmail({RawMessage: {Data: transformed}}).promise();
     }
 }
 
