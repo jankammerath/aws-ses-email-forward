@@ -15,7 +15,6 @@ You can configure a default target and the sender address through the CloudForma
 | Environment variable           | Value                                              | Description                                                             |
 | :------------------------------|:---------------------------------------------------|:------------------------------------------------------------------------|
 | FORWARD_RULE_1                 | user@domain.com;user@target.com                    | Forwards from user@domain.com to user@target.com                        |
-| :------------------------------|:---------------------------------------------------|:------------------------------------------------------------------------|
 | FORWARD_RULE_2                 | group@domain.com;user1@target.com,user2@target.com | Forwards from group@domain.com to user1@target.com and user2@target.com |
 
 If none of the environment variables match the original target e-mail address, then the message will be forwarded to the destination e-mail address defined in the CloudFormation template.
