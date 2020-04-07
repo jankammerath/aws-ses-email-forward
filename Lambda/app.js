@@ -126,10 +126,10 @@ function getTargetMailAddress(sourceTarget){
     let result = process.env['DEFAULT_RECIPIENT'];
 
     for(let envVar in process.env){
-        if(envVar.startsWith('forward-from:')){
-            let fromAddress = envVar.split(':')[1].trim();
+        if(envVar.startsWith('FORWARD_RULE_')){
+            let fromAddress = process.env[envVar].split(';')[0].trim();
             if(fromAddress.toLowerCase() === sourceTarget.toLowerCase()){
-                result = process.env[envVar];
+                result = process.env[envVar].split(';')[1].trim();
             }
         }
     }
