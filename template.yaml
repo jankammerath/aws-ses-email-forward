@@ -110,7 +110,7 @@ Resources:
         - LambdaRole
         Type: AWS::Lambda::Function
         Properties:
-            Handler: 'app.lambdaHandler'
+            Handler: 'index.lambdaHandler'
             Role: !GetAtt LambdaRole.Arn
             Runtime: 'nodejs12.x'
             Timeout: 60
