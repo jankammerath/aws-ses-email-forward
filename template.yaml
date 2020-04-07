@@ -31,6 +31,18 @@ Parameters:
         Default: "my-email-s3-bucket"
 
 Resources:
+    # the bucket that will hold the emails from ses
+    Bucket:
+      Type: AWS::S3::Bucket
+      DependsOn:
+        - LambdaFunction
+      Properties:
+        BucketName: !Ref EmailBucketName
+        NotificationConfiguration:
+          LambdaConfigurations:
+            - Event: s3:ObjectCreated:*
+              Function: !GetAtt LambdaFunction.Arn
+
     # IAM role for the lambda function
     LambdaRole:
         Type: AWS::IAM::Role
@@ -74,15 +86,6 @@ Resources:
             Principal: s3.amazonaws.com
             SourceAccount: !Ref 'AWS::AccountId'
             SourceArn: !Sub 'arn:aws:s3:::${EmailBucketName}'
-
-    # trigger calling lambda for new s3 objects
-    LambdaTrigger:
-        Type: Custom::RouteTableLambda
-        DependsOn: LambdaInvokePermission
-        Properties:
-            ServiceToken: !GetAtt LambdaFunction.Arn
-            LambdaArn: !GetAtt LambdaFunction.Arn
-            Bucket: !Ref EmailBucketName
 
     # lambda function that processes the forwarding
     LambdaFunction:
