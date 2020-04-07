@@ -10,7 +10,7 @@ Once the CloudFormation stack is installed, you can assign the newly created s3 
 
 ## Configure target addresses
 
-You can configure a default target and the sender address through the CloudFormation template. The original sender will be kept in the 'Reply-To' header of the forwarded message. If you wish to define further source e-mail addresses and their individual destinations you can create environment variables for the Lambda script.
+You can configure a default target and the sender address through the CloudFormation template. The original sender will be kept in the 'Reply-To' header of the forwarded message. If you wish to define further source e-mail addresses and their individual destinations you can create environment variables for the Lambda script. You can add as many environment variables with forward rules as you wish as long as it starts with "FORWARD_RULE_".
 
 | Environment variable           | Value                               | Description                                           |
 | :------------------------------|:------------------------------------|:------------------------------------------------------|
