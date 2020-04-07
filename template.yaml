@@ -49,15 +49,16 @@ Resources:
       DependsOn:
         - Bucket
       Properties:
-        Bucket: !Ref Bucket
+        Bucket: !Ref EmailBucketName
         PolicyDocument:
+          Version: '2012-10-17'
           Statement:
-            - Action:
-                - "s3:PutObject"
-              Effect: Allow
-              Resource: !Sub 'arn:aws:s3:::${EmailBucketName}'
-              Principal:
-                - Service: "ses.amazonaws.com"  
+          - Action: 's3:PutObject'
+            Effect: Allow
+            Resource: !Sub '${Bucket.Arn}/*'
+            Principal: 
+              Service: 
+              - 'ses.amazonaws.com'
 
     # IAM role for the lambda function
     LambdaRole:
